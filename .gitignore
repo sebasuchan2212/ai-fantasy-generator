@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+.vercel/
+.env
+.env.local
+.env.*.local
+.npm-cache/
+.edge-qa/
+.chrome-qa/
+*.tsbuildinfo
+.next-dev.log
+.next-dev.err
+public/qa-*.png
