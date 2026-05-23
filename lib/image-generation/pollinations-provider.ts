@@ -62,10 +62,11 @@ function buildProductionPrompt(request: ImageGenerationRequest) {
     : "simple light fantasy background, readable thumbnail composition";
 
   return [
+    "STRICTLY FOLLOW THESE VISUAL SETTINGS",
+    request.prompt,
     ...base,
     ...quality,
     background,
-    `source description: ${request.prompt}`,
     "no text, no captions, no logo, no watermark, no UI, no simple icon, no flat vector, no placeholder, no abstract symbol, no low resolution, no blur, no distorted face, no extra limbs, no cropped head, no duplicate character"
   ].join(", ");
 }
