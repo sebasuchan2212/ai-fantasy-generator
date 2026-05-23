@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mockImageProvider } from "@/lib/image-generation/mock-provider";
 import {
   buildPollinationsPublicUrl,
   buildPollinationsRemoteUrl,
@@ -9,37 +8,18 @@ import {
 
 export const runtime = "nodejs";
 
-function dataUriToImageResponse(dataUri: string) {
-  const match = dataUri.match(/^data:([^,]+),(.*)$/);
-
-  if (!match) {
-    return NextResponse.json(
-      { message: "画像フォールバックの生成に失敗しました。" },
-      { status: 500 }
-    );
-  }
-
-  const metadata = match[1] ?? "image/svg+xml;utf8";
-  const [contentType = "image/svg+xml", ...metadataParts] = metadata.split(";");
-  const isBase64 = metadataParts.includes("base64");
-  const payload = match[2] ?? "";
-  const body = isBase64
-    ? Buffer.from(payload, "base64")
-    : Buffer.from(decodeURIComponent(payload), "utf8");
-
-  return new Response(body, {
-    headers: {
-      "Content-Type": contentType,
-      "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"
-    }
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
   });
 }
 
-async function fetchImage(url: URL) {
+async function fetchImageOnce(url: URL) {
   const response = await fetch(url, {
     headers: {
       Accept: "image/*"
     },
+    signal: AbortSignal.timeout(45_000),
     next: {
       revalidate: 60 * 60 * 24 * 30
     }
@@ -58,6 +38,23 @@ async function fetchImage(url: URL) {
   });
 }
 
+async function fetchImageWithRetry(urls: URL[]) {
+  let lastError: unknown;
+
+  for (let index = 0; index < urls.length; index += 1) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await fetchImageOnce(urls[index]);
+      } catch (error) {
+        lastError = error;
+        await sleep(900 + attempt * 1400 + index * 700);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function GET(request: NextRequest) {
   const params = pollinationsParamsFromSearch(request.nextUrl.searchParams);
   const signature = request.nextUrl.searchParams.get("sig") ?? "";
@@ -70,20 +67,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const urls: URL[] = [];
+
     if (process.env.POLLINATIONS_API_KEY) {
-      return await fetchImage(buildPollinationsRemoteUrl(params));
+      urls.push(buildPollinationsRemoteUrl(params));
     }
 
-    return await fetchImage(buildPollinationsPublicUrl(params));
-  } catch {
-    const fallback = await mockImageProvider.generateImage({
-      prompt: params.prompt,
-      kind: params.kind,
-      seed: params.seed,
-      quality: Number(params.width) >= 1280 ? "high" : "standard",
-      transparent: params.transparent === "true"
-    });
+    urls.push(buildPollinationsPublicUrl(params));
 
-    return dataUriToImageResponse(fallback.imageUrl);
+    return await fetchImageWithRetry(urls);
+  } catch {
+    return NextResponse.json(
+      { message: "画像生成APIが混雑しています。自動で再試行します。" },
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": "3"
+        }
+      }
+    );
   }
 }

@@ -18,44 +18,37 @@ function stableSeed(value: string) {
   return String(Math.abs(hash));
 }
 
+function compactPrompt(value: string, maxLength = 1350) {
+  return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function negativePrompt(kind: ImageGenerationRequest["kind"]) {
+  const shared =
+    "flat vector, simple icon, simplified avatar, mascot, emoji, clipart, childish cartoon, abstract symbol, UI, text, letters, logo, watermark, blurry, low quality, low detail";
+
+  return kind === "npc"
+    ? `${shared}, chibi, stick figure, featureless face, duplicate face, cropped head`
+    : `${shared}, toy, plush, human character, duplicate creature, cropped body`;
+}
+
 function buildProductionPrompt(request: ImageGenerationRequest) {
-  const base =
+  const format =
     request.kind === "npc"
       ? [
-          "one original fantasy NPC character portrait",
-          "Japanese anime RPG key visual style",
-          "bust portrait, upper body visible, centered composition",
-          "clear attractive face, expressive eyes, detailed hair",
-          "detailed armor, cloak, robe, jewelry, weapons or accessories",
-          "premium game character card illustration",
-          "painterly fantasy concept art",
-          "warm parchment background like a character roster",
-          "soft cinematic lighting, sharp focus, clean silhouette",
-          "looks like a polished TRPG or JRPG character asset"
+          "premium Japanese fantasy RPG character card illustration",
+          "bust portrait, upper body visible, detailed face, detailed hair, detailed costume",
+          "warm parchment background, painterly anime concept art, cinematic lighting"
         ]
       : [
-          "one original fantasy monster concept art",
-          "Japanese RPG bestiary illustration style",
-          "full body creature visible, centered composition",
-          "clear anatomy, unique silhouette, detailed head and claws",
-          "scales, fur, horns, wings, armor plates, magical effects where appropriate",
-          "premium game monster card illustration",
-          "painterly fantasy concept art",
-          "warm parchment or light studio background",
-          "dramatic cinematic lighting, sharp focus, clean readable shape",
-          "looks like a polished TRPG or JRPG monster asset"
+          "premium Japanese fantasy RPG monster bestiary illustration",
+          "single full body creature, detailed anatomy, detailed head, claws, texture, readable silhouette",
+          "warm parchment background, painterly concept art, cinematic lighting"
         ];
 
   const quality =
     request.quality === "high"
-      ? [
-          "masterpiece quality",
-          "ultra detailed",
-          "intricate rendering",
-          "high resolution",
-          "rich materials"
-        ]
-      : ["high quality", "detailed", "clean rendering"];
+      ? "masterpiece quality, ultra detailed, intricate rendering, high resolution"
+      : "high quality, detailed, clean rendering";
 
   const background = request.transparent
     ? "isolated subject, transparent background if supported, no scene clutter"
@@ -63,11 +56,11 @@ function buildProductionPrompt(request: ImageGenerationRequest) {
 
   return [
     "STRICTLY FOLLOW THESE VISUAL SETTINGS",
-    request.prompt,
-    ...base,
-    ...quality,
+    compactPrompt(request.prompt),
+    ...format,
+    quality,
     background,
-    "no text, no captions, no logo, no watermark, no UI, no simple icon, no flat vector, no placeholder, no abstract symbol, no low resolution, no blur, no distorted face, no extra limbs, no cropped head, no duplicate character"
+    "not a flat icon, not a vector avatar, not a simple placeholder"
   ].join(", ");
 }
 
@@ -84,15 +77,14 @@ export const pollinationsImageProvider: ImageGenerationProvider = {
       width: request.quality === "high" ? "1280" : "1024",
       height: request.quality === "high" ? "960" : "768",
       seed: stableSeed(`${request.seed ?? ""}:${request.prompt}`),
-      enhance: "true",
+      enhance: "false",
       nologo: "true",
-      safe: "true",
+      safe: "false",
+      negative: negativePrompt(request.kind),
       referrer: process.env.POLLINATIONS_REFERRER ?? "ai-fantasy-generator",
       ...(request.transparent ? { transparent: "true" as const } : {})
     };
-    const useSignedProxy =
-      Boolean(process.env.POLLINATIONS_API_KEY) ||
-      process.env.POLLINATIONS_FORCE_PROXY === "true";
+    const useSignedProxy = process.env.POLLINATIONS_DIRECT_PUBLIC !== "true";
 
     return {
       imageUrl: useSignedProxy

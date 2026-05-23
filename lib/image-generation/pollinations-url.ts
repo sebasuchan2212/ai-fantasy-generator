@@ -11,6 +11,7 @@ export type PollinationsImageProxyParams = {
   nologo: "true" | "false";
   safe: "true" | "false";
   referrer: string;
+  negative?: string;
   transparent?: "true";
 };
 
@@ -25,6 +26,7 @@ const SIGNED_KEYS: Array<keyof PollinationsImageProxyParams> = [
   "nologo",
   "safe",
   "referrer",
+  "negative",
   "transparent"
 ];
 
@@ -92,6 +94,10 @@ export function buildPollinationsRemoteUrl(params: PollinationsImageProxyParams)
   url.searchParams.set("safe", params.safe);
   url.searchParams.set("referrer", params.referrer);
 
+  if (params.negative) {
+    url.searchParams.set("negative", params.negative);
+  }
+
   if (params.transparent) {
     url.searchParams.set("transparent", params.transparent);
   }
@@ -118,6 +124,10 @@ export function buildPollinationsPublicUrl(params: PollinationsImageProxyParams)
   url.searchParams.set("nologo", params.nologo);
   url.searchParams.set("safe", params.safe);
 
+  if (params.negative) {
+    url.searchParams.set("negative", params.negative);
+  }
+
   if (params.transparent) {
     url.searchParams.set("transparent", params.transparent);
   }
@@ -138,6 +148,7 @@ export function pollinationsParamsFromSearch(
   const nologo = searchParams.get("nologo");
   const safe = searchParams.get("safe");
   const referrer = searchParams.get("referrer");
+  const negative = searchParams.get("negative");
   const transparent = searchParams.get("transparent");
 
   const widthNumber = Number(width);
@@ -161,6 +172,7 @@ export function pollinationsParamsFromSearch(
     (nologo !== "true" && nologo !== "false") ||
     (safe !== "true" && safe !== "false") ||
     !referrer ||
+    (negative !== null && negative.length > 900) ||
     (transparent !== null && transparent !== "true")
   ) {
     return null;
@@ -177,6 +189,7 @@ export function pollinationsParamsFromSearch(
     nologo,
     safe,
     referrer,
+    ...(negative ? { negative } : {}),
     ...(transparent === "true" ? { transparent: "true" as const } : {})
   };
 }
