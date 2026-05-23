@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Box, Heart, History, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { CreditBadge } from "@/components/CreditBadge";
 import { EmptyState } from "@/components/EmptyState";
+import { GeneratedImage } from "@/components/GeneratedImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -131,12 +131,12 @@ export function DashboardClient() {
                 ) : (
                   favorites.slice(0, 8).map((item) => (
                     <div key={item.id} className="flex items-center gap-3 rounded-lg border p-2">
-                      <Image
+                      <GeneratedImage
                         src={item.imageUrl}
                         alt={item.name}
+                        kind={item.generationType}
                         width={96}
                         height={96}
-                        unoptimized
                         className="size-12 rounded-md object-cover"
                       />
                       <div className="min-w-0">

@@ -12,7 +12,7 @@
 
 - デモモード: APIキーなしで動く確認用モード。クレジットはブラウザのlocalStorageに保存されます。
 - 本番モード: Supabaseでログイン・履歴・クレジットを管理し、Stripeでクレジット販売します。
-- 画像生成: 初期状態はモック画像。`OPENAI_API_KEY` と `IMAGE_API_PROVIDER=openai` を設定するとOpenAI画像生成へ接続できます。
+- 画像生成: 初期状態はPollinations連携に対応。APIキーなしでも表示は壊れず、`IMAGE_API_PROVIDER=mock` なら完全ローカルのプレースホルダー画像で動きます。`POLLINATIONS_API_KEY` または `OPENAI_API_KEY` を設定すると実画像生成へ接続できます。
 
 ## 1. 完成しているもの
 
@@ -362,11 +362,43 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 - Webhook secretもテストと本番で別です。
 - 本番公開前に返金・キャンセル・問い合わせ導線を明記してください。
 
-## 7. OpenAI画像生成APIの登録と接続
+## 7. 画像生成APIの登録と接続
 
-初期状態はモック画像で動きます。本物の画像生成を使う場合だけ設定します。
+初期状態でもアプリは動きます。本物の画像生成を使う場合だけ設定します。無料枠から始めやすい構成としてPollinationsを追加済みです。OpenAI画像生成にも差し替えできます。
 
-### 7.1 OpenAI Platformに登録する
+### 7.1 Pollinationsを使う
+
+1. Pollinationsの公式ページにアクセスします。
+2. APIキー発行ページでキーを作成します。
+3. サーバー側で使う場合は `sk_` から始まるSecret Keyを使います。
+4. Vercelまたは `.env.local` に以下を設定します。
+
+```env
+IMAGE_API_PROVIDER=pollinations
+POLLINATIONS_API_KEY=sk_...
+POLLINATIONS_PROXY_SECRET=ランダムな長い文字列
+POLLINATIONS_IMAGE_MODEL=flux
+POLLINATIONS_REFERRER=ai-fantasy-generator
+```
+
+このアプリでは `/api/image/pollinations` を経由して画像を表示します。Secret Keyを画像URLに直接入れないため、ブラウザやHTMLにAPIキーが露出しません。
+
+APIキーなしで試したい場合:
+
+```env
+IMAGE_API_PROVIDER=pollinations
+POLLINATIONS_API_KEY=
+```
+
+外部APIを一切使わない場合:
+
+```env
+IMAGE_API_PROVIDER=mock
+```
+
+画像生成に失敗した場合も、カードは自動でプレースホルダー画像へ戻ります。
+
+### 7.2 OpenAI Platformに登録する
 
 1. OpenAI Platformにアクセスします。
 2. アカウントを作成します。
@@ -374,7 +406,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 4. Billingを設定します。
 5. API Keyを作成します。
 
-### 7.2 環境変数に入れる
+### 7.3 OpenAIを環境変数に入れる
 
 `.env.local` に入れます。
 
@@ -396,7 +428,7 @@ OPENAI_IMAGE_MODEL=gpt-image-1
 - モデルによってはOrganization Verificationが必要になる場合があります。
 - まずはモックで公開し、収益導線ができてから実画像生成をONにすると費用を抑えやすいです。
 
-### 7.3 コスト管理
+### 7.4 コスト管理
 
 画像生成はコストが発生します。高品質画像生成はこのアプリでは追加2クレジットにしています。
 
@@ -431,7 +463,8 @@ VercelはNext.jsアプリを公開する場所です。
 
 ```env
 NEXT_PUBLIC_APP_URL=https://あなたのVercelドメイン
-IMAGE_API_PROVIDER=mock
+IMAGE_API_PROVIDER=pollinations
+POLLINATIONS_PROXY_SECRET=ランダムな長い文字列
 ```
 
 Supabase接続後:
@@ -456,6 +489,16 @@ OpenAI接続後:
 OPENAI_API_KEY=
 IMAGE_API_PROVIDER=openai
 OPENAI_IMAGE_MODEL=gpt-image-1
+```
+
+Pollinations接続後:
+
+```env
+IMAGE_API_PROVIDER=pollinations
+POLLINATIONS_API_KEY=
+POLLINATIONS_PROXY_SECRET=ランダムな長い文字列
+POLLINATIONS_IMAGE_MODEL=flux
+POLLINATIONS_REFERRER=ai-fantasy-generator
 ```
 
 6. `Deploy` を押します。
@@ -730,17 +773,19 @@ CTA例:
 - Stripe DashboardのWebhookログが200になっている
 - Supabaseの `credit_transactions` に行が追加されている
 
-### 13.4 OpenAI画像が出ない
+### 13.4 画像が出ない
 
 確認:
 
+- `IMAGE_API_PROVIDER` が `pollinations` / `openai` / `mock` のいずれかになっている
+- Pollinations利用時は `POLLINATIONS_API_KEY` と `POLLINATIONS_PROXY_SECRET` をVercelにも設定した
 - `OPENAI_API_KEY` が正しい
 - `IMAGE_API_PROVIDER=openai` になっている
 - OpenAI Billingが有効
 - 使う画像モデルが利用可能
 - Organization Verificationが必要なモデルではないか確認する
 
-失敗してもアプリはモック画像へ戻る設計です。
+失敗してもアプリはモック画像へ戻る設計です。画面に壊れた画像アイコンだけが残らないよう、表示側にもフォールバックを入れています。
 
 ## 14. 今後の改善ロードマップ
 

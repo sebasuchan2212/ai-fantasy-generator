@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { GeneratedImage } from "@/components/GeneratedImage";
 import type { GenerationItem, GeneratorType, Monster, NPC } from "@/lib/types";
 
 function isNPC(item: GenerationItem): item is NPC {
@@ -46,12 +46,12 @@ export function ResultList({
               onCheckedChange={() => onToggleSelected(item.id)}
               aria-label={`${item.name}を選択`}
             />
-            <Image
+            <GeneratedImage
               src={item.imageUrl}
               alt={item.name}
+              kind={type}
               width={160}
               height={120}
-              unoptimized
               className="aspect-[4/3] w-full rounded-md object-cover"
             />
             <div className="min-w-0">

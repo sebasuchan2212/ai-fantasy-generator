@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -9,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { GeneratedImage } from "@/components/GeneratedImage";
 import type { GenerationItem, GeneratorType, Monster, NPC } from "@/lib/types";
 
 function isNPC(item: GenerationItem): item is NPC {
@@ -36,12 +36,12 @@ export function DetailDrawer({
           <DialogDescription>{item.shortDescription}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-5 md:grid-cols-[260px_minmax(0,1fr)]">
-          <Image
+          <GeneratedImage
             src={item.imageUrl}
             alt={item.name}
+            kind={type}
             width={960}
             height={720}
-            unoptimized
             className="aspect-[4/3] w-full rounded-lg border object-cover"
           />
           <div className="flex flex-col gap-4 text-sm leading-6">

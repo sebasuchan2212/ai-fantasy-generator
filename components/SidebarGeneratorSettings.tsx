@@ -1,18 +1,11 @@
 "use client";
 
-import { ChevronDown, Coins, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown, Coins, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -74,23 +67,45 @@ function SelectField({
   options: string[];
   onChange: (value: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-2">
       <Label>{label}</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
+      <div className="rounded-lg border bg-background shadow-sm">
+        <button
+          type="button"
+          className="flex h-10 w-full items-center justify-between gap-3 rounded-lg px-3 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span className="truncate">{value}</span>
+          <ChevronDown
+            className={cn("shrink-0 text-muted-foreground transition", open && "rotate-180")}
+          />
+        </button>
+        {open ? (
+          <div className="max-h-56 overflow-y-auto border-t p-1">
             {options.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
+              <button
+                key={option}
+                type="button"
+                className={cn(
+                  "flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold transition hover:bg-accent hover:text-accent-foreground",
+                  value === option && "bg-accent text-accent-foreground"
+                )}
+                onClick={() => {
+                  onChange(option);
+                  setOpen(false);
+                }}
+              >
+                <span>{option}</span>
+                {value === option ? <Check className="text-primary" /> : null}
+              </button>
             ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

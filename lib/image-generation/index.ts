@@ -1,5 +1,6 @@
 import { mockImageProvider } from "@/lib/image-generation/mock-provider";
 import { openAIImageProvider } from "@/lib/image-generation/openai-provider";
+import { pollinationsImageProvider } from "@/lib/image-generation/pollinations-provider";
 import type {
   ImageGenerationRequest,
   ImageGenerationResult
@@ -8,10 +9,13 @@ import type {
 export async function generateImageSafe(
   request: ImageGenerationRequest
 ): Promise<ImageGenerationResult> {
+  const providerName = process.env.IMAGE_API_PROVIDER ?? "pollinations";
   const provider =
-    process.env.IMAGE_API_PROVIDER === "openai" && process.env.OPENAI_API_KEY
+    providerName === "openai" && process.env.OPENAI_API_KEY
       ? openAIImageProvider
-      : mockImageProvider;
+      : providerName === "mock"
+        ? mockImageProvider
+        : pollinationsImageProvider;
 
   try {
     return await provider.generateImage(request);

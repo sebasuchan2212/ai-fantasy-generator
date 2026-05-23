@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { GeneratedImage } from "@/components/GeneratedImage";
 import type { GenerationItem, GeneratorType, Monster, NPC } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -52,12 +52,12 @@ export function ResultCard({
       )}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-        <Image
+        <GeneratedImage
           src={item.imageUrl}
           alt={item.name}
+          kind={type}
           width={960}
           height={600}
-          unoptimized
           className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
         />
         <span className="absolute left-3 top-3 rounded-md bg-slate-950/60 px-2 py-1 text-xs font-bold text-white">

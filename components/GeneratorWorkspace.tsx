@@ -40,7 +40,7 @@ import {
   setDemoCredits,
   toggleLocalFavorite
 } from "@/lib/demo-store";
-import { calculateCreditCost } from "@/lib/mock-data";
+import { calculateCreditCost } from "@/lib/credits";
 import { monsterSettingsSchema, npcSettingsSchema } from "@/lib/schemas";
 import { getAccessToken } from "@/lib/supabase/client";
 import type {

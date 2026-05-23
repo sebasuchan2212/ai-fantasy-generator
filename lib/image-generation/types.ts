@@ -3,11 +3,12 @@ export type ImageGenerationRequest = {
   kind: "npc" | "monster";
   seed?: string;
   quality?: "standard" | "high";
+  transparent?: boolean;
 };
 
 export type ImageGenerationResult = {
   imageUrl: string;
-  provider: "mock" | "openai";
+  provider: "mock" | "openai" | "pollinations";
 };
 
 export type ImageGenerationProvider = {

@@ -13,6 +13,7 @@ import {
   NPC_WORLDS
 } from "@/lib/constants";
 import { generateImageSafe } from "@/lib/image-generation";
+import { calculateCreditCost } from "@/lib/credits";
 import type { Monster, MonsterSettings, NPC, NPCSettings } from "@/lib/types";
 
 function hashSeed(value: string) {
@@ -117,9 +118,7 @@ const DROPS = [
   "黒曜石の鱗"
 ];
 
-export function calculateCreditCost(count: number, highQualityImage: boolean) {
-  return count * (highQualityImage ? 3 : 1);
-}
+export { calculateCreditCost };
 
 export async function generateNPCs(settings: NPCSettings): Promise<NPC[]> {
   const now = new Date().toISOString();
@@ -167,7 +166,8 @@ export async function generateNPCs(settings: NPCSettings): Promise<NPC[]> {
       prompt: imagePrompt,
       kind: "npc",
       seed: `${name}-${index}`,
-      quality: settings.highQualityImage ? "high" : "standard"
+      quality: settings.highQualityImage ? "high" : "standard",
+      transparent: false
     });
 
     results.push({
@@ -246,7 +246,8 @@ export async function generateMonsters(
       prompt: imagePrompt,
       kind: "monster",
       seed: `${name}-${index}`,
-      quality: settings.highQualityImage ? "high" : "standard"
+      quality: settings.highQualityImage ? "high" : "standard",
+      transparent: settings.background === "transparent"
     });
 
     results.push({
