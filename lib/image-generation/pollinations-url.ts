@@ -104,6 +104,27 @@ export function buildPollinationsRemoteUrl(params: PollinationsImageProxyParams)
   return url;
 }
 
+export function buildPollinationsPublicUrl(params: PollinationsImageProxyParams) {
+  const baseUrl =
+    process.env.POLLINATIONS_PUBLIC_BASE_URL?.replace(/\/$/, "") ??
+    "https://image.pollinations.ai";
+  const url = new URL(`${baseUrl}/prompt/${encodeURIComponent(params.prompt)}`);
+
+  url.searchParams.set("model", params.model);
+  url.searchParams.set("width", params.width);
+  url.searchParams.set("height", params.height);
+  url.searchParams.set("seed", params.seed);
+  url.searchParams.set("enhance", params.enhance);
+  url.searchParams.set("nologo", params.nologo);
+  url.searchParams.set("safe", params.safe);
+
+  if (params.transparent) {
+    url.searchParams.set("transparent", params.transparent);
+  }
+
+  return url;
+}
+
 export function pollinationsParamsFromSearch(
   searchParams: URLSearchParams
 ): PollinationsImageProxyParams | null {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mockImageProvider } from "@/lib/image-generation/mock-provider";
 import {
+  buildPollinationsPublicUrl,
   buildPollinationsRemoteUrl,
   pollinationsParamsFromSearch,
   verifyPollinationsSignature
@@ -34,6 +35,29 @@ function dataUriToImageResponse(dataUri: string) {
   });
 }
 
+async function fetchImage(url: URL) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "image/*"
+    },
+    next: {
+      revalidate: 60 * 60 * 24 * 30
+    }
+  });
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!response.ok || !contentType.startsWith("image/") || !response.body) {
+    throw new Error("Image provider did not return an image.");
+  }
+
+  return new Response(response.body, {
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=2592000, stale-while-revalidate=604800"
+    }
+  });
+}
+
 export async function GET(request: NextRequest) {
   const params = pollinationsParamsFromSearch(request.nextUrl.searchParams);
   const signature = request.nextUrl.searchParams.get("sig") ?? "";
@@ -46,27 +70,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const remoteUrl = buildPollinationsRemoteUrl(params);
-    const response = await fetch(remoteUrl, {
-      headers: {
-        Accept: "image/*"
-      },
-      next: {
-        revalidate: 60 * 60 * 24 * 30
-      }
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-
-    if (!response.ok || !contentType.startsWith("image/") || !response.body) {
-      throw new Error("Pollinations did not return an image.");
+    if (process.env.POLLINATIONS_API_KEY) {
+      return await fetchImage(buildPollinationsRemoteUrl(params));
     }
 
-    return new Response(response.body, {
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=2592000, stale-while-revalidate=604800"
-      }
-    });
+    return await fetchImage(buildPollinationsPublicUrl(params));
   } catch {
     const fallback = await mockImageProvider.generateImage({
       prompt: params.prompt,

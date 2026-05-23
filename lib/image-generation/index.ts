@@ -9,7 +9,15 @@ import type {
 export async function generateImageSafe(
   request: ImageGenerationRequest
 ): Promise<ImageGenerationResult> {
-  const providerName = process.env.IMAGE_API_PROVIDER ?? "pollinations";
+  const requestedProvider = process.env.IMAGE_API_PROVIDER ?? "pollinations";
+  const isDeployedProduction =
+    process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+  const providerName =
+    requestedProvider === "mock" &&
+    isDeployedProduction &&
+    process.env.FORCE_MOCK_IMAGES !== "true"
+      ? "pollinations"
+      : requestedProvider;
   const provider =
     providerName === "openai" && process.env.OPENAI_API_KEY
       ? openAIImageProvider

@@ -118,6 +118,85 @@ const DROPS = [
   "黒曜石の鱗"
 ];
 
+const NPC_RACE_EN: Record<string, string> = {
+  人間: "human",
+  エルフ: "elf",
+  ドワーフ: "dwarf",
+  獣人: "beastfolk",
+  魔族: "demonkin",
+  天使: "angel",
+  その他: "mysterious fantasy race"
+};
+
+const NPC_GENDER_EN: Record<string, string> = {
+  男性: "male",
+  女性: "female",
+  その他: "androgynous",
+  すべて: "fantasy"
+};
+
+const NPC_ROLE_EN: Record<string, string> = {
+  戦士: "warrior",
+  魔法使い: "mage",
+  盗賊: "rogue",
+  僧侶: "cleric",
+  商人: "merchant",
+  貴族: "noble",
+  旅人: "traveler",
+  村人: "villager",
+  学者: "scholar",
+  傭兵: "mercenary",
+  その他: "adventurer"
+};
+
+const AGE_EN: Record<string, string> = {
+  若年: "young adult",
+  成人: "adult",
+  中年: "middle aged",
+  老年: "elderly",
+  すべて: "adult"
+};
+
+const WORLD_EN: Record<string, string> = {
+  "ファンタジー（中世風）": "classic medieval fantasy",
+  ダークファンタジー: "dark fantasy",
+  和風ファンタジー: "Japanese fantasy",
+  近未来ファンタジー: "near future fantasy",
+  スチームパンク: "steampunk fantasy",
+  学園ファンタジー: "academy fantasy",
+  王道ファンタジー: "classic heroic fantasy",
+  ホラー: "horror fantasy",
+  神話風: "mythological fantasy",
+  和風妖怪: "Japanese yokai fantasy",
+  近未来モンスター: "near future monster fantasy"
+};
+
+const MONSTER_TYPE_EN: Record<string, string> = {
+  獣系: "beast monster",
+  魔物系: "demonic creature",
+  アンデッド: "undead monster",
+  悪魔系: "devil monster",
+  竜系: "dragon monster",
+  機械系: "mechanical monster",
+  精霊系: "spirit monster",
+  昆虫系: "insect monster",
+  海洋系: "sea monster",
+  植物系: "plant monster",
+  その他: "fantasy monster"
+};
+
+const SIZE_EN: Record<string, string> = {
+  小型: "small",
+  中型: "medium sized",
+  大型: "large",
+  超大型: "colossal",
+  すべて: "medium sized"
+};
+
+function toEnglish(value: string, dictionary: Record<string, string>, fallback: string) {
+  return dictionary[value] ?? fallback;
+}
+
 export { calculateCreditCost };
 
 export async function generateNPCs(settings: NPCSettings): Promise<NPC[]> {
@@ -151,6 +230,10 @@ export async function generateNPCs(settings: NPCSettings): Promise<NPC[]> {
         ? "短い比喩を交え、相手の反応を試すように話す。"
         : "落ち着いた敬体で、必要な情報を簡潔に伝える。");
     const imagePrompt = [
+      `${toEnglish(world, WORLD_EN, "fantasy")} ${toEnglish(race, NPC_RACE_EN, "human")} ${toEnglish(role, NPC_ROLE_EN, "adventurer")}`,
+      `${toEnglish(gender, NPC_GENDER_EN, "fantasy")} ${toEnglish(ageGroup, AGE_EN, "adult")} character`,
+      "high quality anime fantasy portrait, beautiful detailed face, upper body, character roster card art",
+      "painterly beige background, detailed costume, cinematic lighting, no text, no icon, no placeholder",
       `${world}の${race}の${role}`,
       `${gender}、${ageGroup}`,
       hair,
@@ -232,6 +315,10 @@ export async function generateMonsters(
         : "光、音、塩、銀製武器など明確な対策を用意しやすい。";
     const dropItems = Array.from(new Set([pick(DROPS, rng), pick(DROPS, rng)]));
     const imagePrompt = [
+      `${toEnglish(world, WORLD_EN, "dark fantasy")} ${toEnglish(monsterType, MONSTER_TYPE_EN, "fantasy monster")}`,
+      `${toEnglish(size, SIZE_EN, "medium sized")} creature, ${danger} danger level`,
+      "high quality Japanese RPG monster concept art, full body, detailed anatomy, bestiary card art",
+      "painterly beige background, sharp silhouette, cinematic lighting, no text, no icon, no placeholder",
       `${world}の${monsterType}モンスター`,
       `${size}、危険度${danger}`,
       `${colorTheme}を基調`,

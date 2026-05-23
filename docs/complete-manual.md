@@ -12,7 +12,7 @@
 
 - デモモード: APIキーなしで動く確認用モード。クレジットはブラウザのlocalStorageに保存されます。
 - 本番モード: Supabaseでログイン・履歴・クレジットを管理し、Stripeでクレジット販売します。
-- 画像生成: 初期状態はPollinations連携に対応。APIキーなしでも表示は壊れず、`IMAGE_API_PROVIDER=mock` なら完全ローカルのプレースホルダー画像で動きます。`POLLINATIONS_API_KEY` または `OPENAI_API_KEY` を設定すると実画像生成へ接続できます。
+- 画像生成: 初期状態はPollinations連携に対応。APIキーなしでも公開系エンドポイントを試し、表示は壊れません。`IMAGE_API_PROVIDER=mock` は開発確認用で、本番では `FORCE_MOCK_IMAGES=true` を入れない限りPollinationsを優先します。`POLLINATIONS_API_KEY` または `OPENAI_API_KEY` を設定すると実画像生成へ安定接続できます。
 
 ## 1. 完成しているもの
 
@@ -130,7 +130,7 @@ supabase/
 - Supabase未設定時だけデモモードになります。
 - 本番環境でSupabaseが設定されている場合、生成APIは認証ユーザーを要求します。
 - Stripe Webhookは署名検証を行います。
-- 画像生成に失敗してもモック画像へフォールバックします。
+- 画像生成に失敗してもファンタジー風のローカル画像へフォールバックします。
 
 ## 4. GitHub登録とコード公開
 
@@ -394,9 +394,10 @@ POLLINATIONS_API_KEY=
 
 ```env
 IMAGE_API_PROVIDER=mock
+FORCE_MOCK_IMAGES=true
 ```
 
-画像生成に失敗した場合も、カードは自動でプレースホルダー画像へ戻ります。
+画像生成に失敗した場合も、カードは自動でファンタジー風のローカルフォールバック画像へ戻ります。公開サイトで簡易画像だけになる場合は、Vercelの環境変数に `IMAGE_API_PROVIDER=mock` が残っていないか、または `POLLINATIONS_API_KEY` が未設定でレート制限に当たっていないかを確認してください。
 
 ### 7.2 OpenAI Platformに登録する
 
@@ -617,7 +618,7 @@ WordPressのカスタムHTMLブロックに貼ります。
 利益 = 売上 - Stripe手数料 - 画像生成API費用 - Vercel費用 - Supabase費用 - その他運営費
 ```
 
-最初は `IMAGE_API_PROVIDER=mock` で運用し、ユーザーの反応を見てから実画像生成をONにするとリスクが低いです。
+最初は `IMAGE_API_PROVIDER=pollinations` で公開し、レート制限や安定性が必要になったら `POLLINATIONS_API_KEY` を追加するとリスクが低いです。`IMAGE_API_PROVIDER=mock` は開発確認用に限定してください。
 
 ### 10.4 最初に狙う記事
 

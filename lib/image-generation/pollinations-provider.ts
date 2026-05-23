@@ -3,7 +3,11 @@ import type {
   ImageGenerationRequest,
   ImageGenerationResult
 } from "@/lib/image-generation/types";
-import { buildPollinationsProxyUrl } from "@/lib/image-generation/pollinations-url";
+import {
+  buildPollinationsProxyUrl,
+  buildPollinationsPublicUrl,
+  type PollinationsImageProxyParams
+} from "@/lib/image-generation/pollinations-url";
 
 function stableSeed(value: string) {
   let hash = 0;
@@ -18,29 +22,28 @@ function buildProductionPrompt(request: ImageGenerationRequest) {
   const base =
     request.kind === "npc"
       ? [
-          "premium fantasy NPC character portrait",
-          "single character",
-          "waist-up composition",
-          "highly detailed face",
-          "expressive eyes",
-          "professional anime fantasy illustration",
-          "clean concept art for TRPG and game production",
-          "soft cinematic lighting",
-          "detailed costume and accessories",
-          "sharp focus",
-          "polished card artwork"
+          "one original fantasy NPC character portrait",
+          "Japanese anime RPG key visual style",
+          "bust portrait, upper body visible, centered composition",
+          "clear attractive face, expressive eyes, detailed hair",
+          "detailed armor, cloak, robe, jewelry, weapons or accessories",
+          "premium game character card illustration",
+          "painterly fantasy concept art",
+          "warm parchment background like a character roster",
+          "soft cinematic lighting, sharp focus, clean silhouette",
+          "looks like a polished TRPG or JRPG character asset"
         ]
       : [
-          "premium fantasy monster concept art",
-          "single creature",
-          "full body creature design",
-          "highly detailed anatomy",
-          "professional game bestiary illustration",
-          "dynamic silhouette",
-          "clean readable shape language",
-          "dramatic but bright studio lighting",
-          "sharp focus",
-          "polished card artwork"
+          "one original fantasy monster concept art",
+          "Japanese RPG bestiary illustration style",
+          "full body creature visible, centered composition",
+          "clear anatomy, unique silhouette, detailed head and claws",
+          "scales, fur, horns, wings, armor plates, magical effects where appropriate",
+          "premium game monster card illustration",
+          "painterly fantasy concept art",
+          "warm parchment or light studio background",
+          "dramatic cinematic lighting, sharp focus, clean readable shape",
+          "looks like a polished TRPG or JRPG monster asset"
         ];
 
   const quality =
@@ -63,7 +66,7 @@ function buildProductionPrompt(request: ImageGenerationRequest) {
     ...quality,
     background,
     `source description: ${request.prompt}`,
-    "avoid text, captions, logo, watermark, low resolution, blurry, extra limbs, distorted face, cropped head, messy background, duplicate character"
+    "no text, no captions, no logo, no watermark, no UI, no simple icon, no flat vector, no placeholder, no abstract symbol, no low resolution, no blur, no distorted face, no extra limbs, no cropped head, no duplicate character"
   ].join(", ");
 }
 
@@ -73,21 +76,27 @@ export const pollinationsImageProvider: ImageGenerationProvider = {
   ): Promise<ImageGenerationResult> {
     const model = process.env.POLLINATIONS_IMAGE_MODEL ?? "flux";
     const prompt = buildProductionPrompt(request);
+    const params: PollinationsImageProxyParams = {
+      kind: request.kind,
+      prompt,
+      model,
+      width: request.quality === "high" ? "1280" : "1024",
+      height: request.quality === "high" ? "960" : "768",
+      seed: stableSeed(`${request.seed ?? ""}:${request.prompt}`),
+      enhance: "true",
+      nologo: "true",
+      safe: "true",
+      referrer: process.env.POLLINATIONS_REFERRER ?? "ai-fantasy-generator",
+      ...(request.transparent ? { transparent: "true" as const } : {})
+    };
+    const useSignedProxy =
+      Boolean(process.env.POLLINATIONS_API_KEY) ||
+      process.env.POLLINATIONS_FORCE_PROXY === "true";
 
     return {
-      imageUrl: buildPollinationsProxyUrl({
-        kind: request.kind,
-        prompt,
-        model,
-        width: request.quality === "high" ? "1280" : "1024",
-        height: request.quality === "high" ? "800" : "640",
-        seed: stableSeed(`${request.seed ?? ""}:${request.prompt}`),
-        enhance: "true",
-        nologo: "true",
-        safe: "true",
-        referrer: process.env.POLLINATIONS_REFERRER ?? "ai-fantasy-generator",
-        ...(request.transparent ? { transparent: "true" as const } : {})
-      }),
+      imageUrl: useSignedProxy
+        ? buildPollinationsProxyUrl(params)
+        : buildPollinationsPublicUrl(params).toString(),
       provider: "pollinations"
     };
   }

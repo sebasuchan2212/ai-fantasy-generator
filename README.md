@@ -38,7 +38,7 @@ npm run build
 cp .env.example .env.local
 ```
 
-画像生成APIを使わない場合は `IMAGE_API_PROVIDER=mock` にします。無料枠で画像品質を上げたい場合は `IMAGE_API_PROVIDER=pollinations` にし、Pollinationsで作成したAPIキーを `POLLINATIONS_API_KEY` に設定します。OpenAI画像生成に接続する場合は `OPENAI_API_KEY` を設定し、`IMAGE_API_PROVIDER=openai` にします。APIキーはサーバー側Route Handlerでのみ参照され、フロントには出ません。
+画像生成APIを使わない場合は `IMAGE_API_PROVIDER=mock` にします。ただし本番環境では、簡易画像のまま公開されないよう `FORCE_MOCK_IMAGES=true` を入れない限りPollinationsを優先します。無料枠で画像品質を上げたい場合は `IMAGE_API_PROVIDER=pollinations` にし、安定運用するならPollinationsで作成したAPIキーを `POLLINATIONS_API_KEY` に設定します。OpenAI画像生成に接続する場合は `OPENAI_API_KEY` を設定し、`IMAGE_API_PROVIDER=openai` にします。APIキーはサーバー側Route Handlerでのみ参照され、フロントには出ません。
 
 Pollinations設定例:
 
@@ -49,7 +49,7 @@ POLLINATIONS_PROXY_SECRET=ランダムな長い文字列
 POLLINATIONS_IMAGE_MODEL=flux
 ```
 
-`POLLINATIONS_API_KEY` が未設定でもアプリは壊れず、画像読み込みに失敗した場合はプレースホルダー画像へ自動で戻ります。
+`POLLINATIONS_API_KEY` が未設定の場合は公開系エンドポイントを試します。画像読み込みに失敗した場合でもカードは壊れず、最後の保険としてローカル生成のファンタジー風フォールバック画像へ自動で戻ります。
 
 ## Supabase設定手順
 
