@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PRICING_PLANS } from "@/lib/constants";
+import {
+  BASE_GENERATION_CREDIT_COST,
+  OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST
+} from "@/lib/credits";
 import { addDemoCredits } from "@/lib/demo-store";
 import { getAccessToken } from "@/lib/supabase/client";
 import { cn, formatCredits } from "@/lib/utils";
@@ -15,6 +19,9 @@ export function PricingCards({
 }: {
   onPurchased?: (credits: number) => void;
 }) {
+  const highQualityCost =
+    BASE_GENERATION_CREDIT_COST + OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST;
+
   const purchase = async (planId: string) => {
     const token = await getAccessToken();
     const response = await fetch("/api/stripe/checkout", {
@@ -77,6 +84,10 @@ export function PricingCards({
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Check className="text-primary" /> NPC・モンスター生成に利用可能
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="text-primary" /> OpenAI高品質は約
+                {Math.floor(plan.credits / highQualityCost)}体分
               </li>
               <li className="flex items-center gap-2">
                 <Check className="text-primary" /> エクスポート無料

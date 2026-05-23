@@ -12,7 +12,7 @@
 
 - デモモード: APIキーなしで動く確認用モード。クレジットはブラウザのlocalStorageに保存されます。
 - 本番モード: Supabaseでログイン・履歴・クレジットを管理し、Stripeでクレジット販売します。
-- 画像生成: 初期状態はPollinations連携に対応。APIキーなしでも公開系エンドポイントを試し、表示は壊れません。`IMAGE_API_PROVIDER=mock` は開発確認用で、本番では `FORCE_MOCK_IMAGES=true` を入れない限りPollinationsを優先します。`POLLINATIONS_API_KEY` または `OPENAI_API_KEY` を設定すると実画像生成へ安定接続できます。
+- 画像生成: 通常の大量生成はPollinations連携、課金向けの高品質生成はOpenAI画像APIに対応します。APIキーなしでも表示は壊れません。`IMAGE_API_PROVIDER=mock` は開発確認用で、本番では `FORCE_MOCK_IMAGES=true` を入れない限りPollinationsを優先します。`OPENAI_API_KEY` を設定すると「OpenAI高品質画像生成」だけOpenAIへ送ります。
 
 ## 1. 完成しているもの
 
@@ -364,7 +364,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 ## 7. 画像生成APIの登録と接続
 
-初期状態でもアプリは動きます。本物の画像生成を使う場合だけ設定します。無料枠から始めやすい構成としてPollinationsを追加済みです。OpenAI画像生成にも差し替えできます。
+初期状態でもアプリは動きます。本物の画像生成を使う場合だけ設定します。無料枠から始めやすい構成としてPollinationsを追加済みです。OpenAI画像生成は課金向けの高品質オプションとして接続できます。
 
 ### 7.1 Pollinationsを使う
 
@@ -413,13 +413,15 @@ FORCE_MOCK_IMAGES=true
 
 ```env
 OPENAI_API_KEY=sk-proj-...
-IMAGE_API_PROVIDER=openai
+IMAGE_API_PROVIDER=pollinations
+OPENAI_STANDARD_IMAGES_ENABLED=false
 ```
 
 任意で画像モデルを指定できます。
 
 ```env
-OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_IMAGE_MODEL=gpt-image-1.5
+OPENAI_IMAGE_SIZE=1024x1024
 ```
 
 補足:
@@ -431,12 +433,13 @@ OPENAI_IMAGE_MODEL=gpt-image-1
 
 ### 7.4 コスト管理
 
-画像生成はコストが発生します。高品質画像生成はこのアプリでは追加2クレジットにしています。
+画像生成はコストが発生します。高品質画像生成はこのアプリでは追加20クレジット、通常生成の1クレジットと合わせて1体21クレジットにしています。OpenAIが請求上限や一時障害で失敗した場合は代替画像へ戻り、追加20クレジットはOpenAI画像が実際に返った分だけ消費します。
 
 おすすめ運用:
 
-- 通常生成: モック画像または低コスト画像
-- 高品質画像生成: 追加クレジット消費
+- 通常生成: Pollinationsまたは低コスト画像
+- 高品質画像生成: OpenAI画像APIを使い、1体21クレジット消費
+- OpenAI高品質生成が不安定な場合は生成数を1体にして1体ずつ実行する
 - 1日あたりの生成上限を追加する
 - ユーザーごとの短時間連打制限を追加する
 - OpenAI利用料金を週1で確認する
@@ -488,8 +491,10 @@ OpenAI接続後:
 
 ```env
 OPENAI_API_KEY=
-IMAGE_API_PROVIDER=openai
-OPENAI_IMAGE_MODEL=gpt-image-1
+IMAGE_API_PROVIDER=pollinations
+OPENAI_IMAGE_MODEL=gpt-image-1.5
+OPENAI_IMAGE_SIZE=1024x1024
+OPENAI_STANDARD_IMAGES_ENABLED=false
 ```
 
 Pollinations接続後:
@@ -778,13 +783,13 @@ CTA例:
 
 確認:
 
-- `IMAGE_API_PROVIDER` が `pollinations` / `openai` / `mock` のいずれかになっている
+- `IMAGE_API_PROVIDER` が `pollinations` / `mock` のどちらかになっている
 - Pollinations利用時は `POLLINATIONS_API_KEY` と `POLLINATIONS_PROXY_SECRET` をVercelにも設定した
-- `OPENAI_API_KEY` が正しい
-- `IMAGE_API_PROVIDER=openai` になっている
+- OpenAI高品質画像生成を使う場合は `OPENAI_API_KEY` が正しい
 - OpenAI Billingが有効
-- 使う画像モデルが利用可能
+- `OPENAI_IMAGE_MODEL` で指定した画像モデルが利用可能
 - Organization Verificationが必要なモデルではないか確認する
+- 高品質画像生成で失敗が続く場合は、生成数を1体にして1体ずつ実行する
 
 失敗してもアプリはモック画像へ戻る設計です。画面に壊れた画像アイコンだけが残らないよう、表示側にもフォールバックを入れています。
 

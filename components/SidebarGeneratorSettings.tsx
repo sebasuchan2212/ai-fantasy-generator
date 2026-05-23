@@ -21,6 +21,7 @@ import {
   NPC_ROLES,
   NPC_WORLDS
 } from "@/lib/constants";
+import { OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST } from "@/lib/credits";
 import type { GeneratorType, MonsterSettings, NPCSettings } from "@/lib/types";
 import { cn, formatCredits } from "@/lib/utils";
 
@@ -492,9 +493,9 @@ export function SidebarGeneratorSettings({
 
         <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
           <span className="flex flex-col gap-1">
-            <span className="text-sm font-bold">高品質画像生成</span>
+            <span className="text-sm font-bold">OpenAI高品質画像生成</span>
             <span className="text-xs text-muted-foreground">
-              1体あたり追加2クレジット
+              1体あたり追加{OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST}クレジット。うまくいかない場合は1体ずつ生成。
             </span>
           </span>
           <Checkbox

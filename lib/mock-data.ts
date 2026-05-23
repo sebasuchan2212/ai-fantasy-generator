@@ -279,6 +279,7 @@ export async function generateNPCs(settings: NPCSettings): Promise<NPC[]> {
       speakingStyle,
       imagePrompt,
       imageUrl: image.imageUrl,
+      imageProvider: image.provider,
       isFavorite: false,
       isSelected: false,
       createdAt: now
@@ -355,6 +356,7 @@ export async function generateMonsters(
       dropItems,
       imagePrompt,
       imageUrl: image.imageUrl,
+      imageProvider: image.provider,
       isFavorite: false,
       isSelected: false,
       createdAt: now

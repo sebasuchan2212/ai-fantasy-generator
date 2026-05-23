@@ -83,6 +83,20 @@ export async function consumeCreditsForUser(
   return { ok: true, remainingCredits: Number(data), error: null };
 }
 
+export async function getCreditsForUser(userId: string) {
+  const admin = createSupabaseAdmin();
+  if (!admin) return null;
+
+  const { data, error } = await admin
+    .from("profiles")
+    .select("credits")
+    .eq("id", userId)
+    .single();
+
+  if (error) return null;
+  return typeof data?.credits === "number" ? data.credits : Number(data?.credits ?? 0);
+}
+
 export async function saveGenerationToSupabase(input: {
   userId: string;
   type: "npc" | "monster";

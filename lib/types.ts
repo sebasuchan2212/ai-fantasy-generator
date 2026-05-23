@@ -17,6 +17,7 @@ export type NPC = {
   speakingStyle: string;
   imagePrompt: string;
   imageUrl: string;
+  imageProvider?: "mock" | "openai" | "pollinations";
   isFavorite: boolean;
   isSelected: boolean;
   createdAt: string;
@@ -37,6 +38,7 @@ export type Monster = {
   dropItems: string[];
   imagePrompt: string;
   imageUrl: string;
+  imageProvider?: "mock" | "openai" | "pollinations";
   isFavorite: boolean;
   isSelected: boolean;
   createdAt: string;
