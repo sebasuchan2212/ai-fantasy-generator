@@ -259,6 +259,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 Stripeはクレジット購入に使います。
 
+このアプリでは、ユーザーの支払いは `STRIPE_SECRET_KEY` を発行したStripeアカウントの売上になります。あなたに振り込まれるようにするには、あなた本人またはあなたの事業のStripeアカウントで本番利用を有効化し、そのStripe Dashboardに銀行口座を登録します。アプリ側で銀行振込を直接実行するのではなく、Stripeの入金スケジュールに従ってStripe残高から銀行口座へ入金されます。
+
 このアプリの料金プラン:
 
 - Starter: 100クレジット / 500円
@@ -320,7 +322,7 @@ Stripe Dashboardでの手順:
 2. `Webhooks` を開きます。
 3. `Add endpoint` を押します。
 4. Endpoint URLに上のWebhook URLを入力します。
-5. Eventsで `checkout.session.completed` を選びます。
+5. Eventsで `checkout.session.completed` と `checkout.session.async_payment_succeeded` を選びます。
 6. 作成後、Signing secretをコピーします。
 7. `.env.local` またはVercel環境変数に入れます。
 
@@ -350,17 +352,50 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ### 6.5 本番決済に切り替える
 
 1. Stripeの本番利用申請・本人確認を完了します。
-2. 本番APIキーを取得します。
-3. Vercelの環境変数を `sk_live_...` と `pk_live_...` に変更します。
-4. 本番Webhook endpointを作ります。
-5. `STRIPE_WEBHOOK_SECRET` も本番Webhookのものに変更します。
-6. 少額で実決済テストをします。
+2. Stripe Dashboardに入金先の銀行口座を登録します。
+3. 入金スケジュールを確認します。
+4. 本番APIキーを取得します。
+5. Vercelの環境変数を `sk_live_...` と `pk_live_...` に変更します。
+6. 本番Webhook endpointを作ります。
+7. `STRIPE_WEBHOOK_SECRET` も本番Webhookのものに変更します。
+8. 少額で実決済テストをします。
+9. Stripe残高に反映されることを確認します。
+10. Supabaseの `credit_transactions` に `stripe_session_id` 付きの行が作られることを確認します。
 
 重要:
 
 - テスト用 `sk_test_...` と本番用 `sk_live_...` を混ぜないでください。
 - Webhook secretもテストと本番で別です。
+- あなたに入金されるかどうかは、Vercelに設定した本番 `STRIPE_SECRET_KEY` があなたのStripeアカウントのものかで決まります。
+- 入金先銀行口座はコードではなくStripe Dashboardで管理します。
 - 本番公開前に返金・キャンセル・問い合わせ導線を明記してください。
+
+### 6.6 あなたへ振り込まれる流れ
+
+```text
+ユーザーがクレジット購入
+  ↓
+Stripe Checkoutで決済
+  ↓
+Stripe残高に売上反映
+  ↓
+WebhookがSupabaseにクレジット付与
+  ↓
+Stripeの入金スケジュールで銀行口座へ入金
+```
+
+アプリはCheckout Sessionを作り、Webhookでクレジットを付与します。売上の銀行入金はStripeが担当します。
+
+必ず確認すること:
+
+- Stripeアカウントが本番利用可能
+- Stripe Dashboardにあなたの銀行口座が登録済み
+- Vercel Productionの `STRIPE_SECRET_KEY` が `sk_live_...`
+- Webhook endpointが本番URLを向いている
+- Webhook secretが本番endpointの `whsec_...`
+- 少額の本番決済でStripe残高とSupabaseクレジットが両方増える
+
+詳しい入金設計は `docs/stripe-payout-design.md` にまとめています。
 
 ## 7. 画像生成APIの登録と接続
 
@@ -775,7 +810,7 @@ CTA例:
 
 - Stripe Webhook URLが正しい
 - `STRIPE_WEBHOOK_SECRET` が正しい
-- `checkout.session.completed` を購読している
+- `checkout.session.completed` と `checkout.session.async_payment_succeeded` を購読している
 - Stripe DashboardのWebhookログが200になっている
 - Supabaseの `credit_transactions` に行が追加されている
 

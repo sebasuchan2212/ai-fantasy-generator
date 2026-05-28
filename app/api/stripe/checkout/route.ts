@@ -40,15 +40,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const metadata = {
+    userId: user.id,
+    planId: plan.id,
+    credits: String(plan.credits)
+  };
+
   const session = await stripe!.checkout.sessions.create({
     mode: "payment",
     success_url: `${getAppUrl()}/pricing?checkout=success`,
     cancel_url: `${getAppUrl()}/pricing?checkout=cancelled`,
     client_reference_id: user.id,
-    metadata: {
-      userId: user.id,
-      planId: plan.id,
-      credits: String(plan.credits)
+    customer_email: user.email ?? undefined,
+    metadata,
+    payment_intent_data: {
+      metadata
     },
     line_items: [
       {

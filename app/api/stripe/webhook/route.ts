@@ -4,6 +4,46 @@ import { getStripeClient } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
+async function fulfillCheckoutSession(session: {
+  id: string;
+  payment_status?: string | null;
+  metadata?: {
+    userId?: string;
+    credits?: string;
+  } | null;
+}) {
+  if (session.payment_status !== "paid") {
+    return;
+  }
+
+  const userId = session.metadata?.userId;
+  const credits = Number(session.metadata?.credits ?? "0");
+
+  if (!userId || userId === "demo" || credits <= 0) {
+    return;
+  }
+
+  const admin = createSupabaseAdmin();
+  if (!admin) {
+    return;
+  }
+
+  const existing = await admin
+    .from("credit_transactions")
+    .select("id")
+    .eq("stripe_session_id", session.id)
+    .maybeSingle();
+
+  if (!existing.data) {
+    await admin.rpc("add_credits_for_user", {
+      target_user_id: userId,
+      credit_amount: credits,
+      transaction_reason: "stripe_checkout",
+      checkout_session_id: session.id
+    });
+  }
+}
+
 export async function POST(request: Request) {
   const stripe = getStripeClient();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -40,30 +80,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const userId = session.metadata?.userId;
-    const credits = Number(session.metadata?.credits ?? "0");
-
-    if (userId && userId !== "demo" && credits > 0) {
-      const admin = createSupabaseAdmin();
-      if (admin) {
-        const existing = await admin
-          .from("credit_transactions")
-          .select("id")
-          .eq("stripe_session_id", session.id)
-          .maybeSingle();
-
-        if (!existing.data) {
-          await admin.rpc("add_credits_for_user", {
-            target_user_id: userId,
-            credit_amount: credits,
-            transaction_reason: "stripe_checkout",
-            checkout_session_id: session.id
-          });
-        }
-      }
-    }
+  if (
+    event.type === "checkout.session.completed" ||
+    event.type === "checkout.session.async_payment_succeeded"
+  ) {
+    await fulfillCheckoutSession(event.data.object);
   }
 
   return NextResponse.json({ received: true });

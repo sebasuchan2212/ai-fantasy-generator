@@ -79,11 +79,15 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ## Stripe設定手順
 
-1. Stripe DashboardでAPIキーを取得します。
-2. `.env.local` に `STRIPE_SECRET_KEY` を設定します。
-3. Webhook Endpointを作成し、URLを `/api/stripe/webhook` にします。
-4. イベント `checkout.session.completed` を購読します。
-5. Webhook signing secretを `STRIPE_WEBHOOK_SECRET` に設定します。
+ユーザーの支払いは、`STRIPE_SECRET_KEY` を発行したStripeアカウントの売上として計上されます。あなたに振り込まれるようにするには、あなた本人またはあなたの事業のStripeアカウントで本番利用を有効化し、そのStripe Dashboardに銀行口座を登録してください。アプリ側で銀行振込を直接実行するのではなく、Stripeの入金スケジュールに従って銀行口座へ入金されます。
+
+1. Stripe Dashboardで本番利用申請と本人確認を完了します。
+2. Stripe Dashboardに入金先の銀行口座を登録します。
+3. APIキーを取得します。
+4. `.env.local` またはVercelに `STRIPE_SECRET_KEY` を設定します。
+5. Webhook Endpointを作成し、URLを `/api/stripe/webhook` にします。
+6. イベント `checkout.session.completed` と `checkout.session.async_payment_succeeded` を購読します。
+7. Webhook signing secretを `STRIPE_WEBHOOK_SECRET` に設定します。
 
 購入プラン:
 
@@ -92,6 +96,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 - Pro: 1500クレジット / 4,980円
 
 Stripe未設定時は、購入ボタンがモック購入としてlocalStorageのクレジットを追加します。
+
+入金設計の詳細は `docs/stripe-payout-design.md` を参照してください。
 
 ## Vercelデプロイ手順
 
@@ -122,6 +128,7 @@ lib/
   exporters.ts           JSON/CSV/Markdown出力
 supabase/schema.sql      テーブル、RLS、RPC
 docs/wordpress-guide.md  AI FANTASY掲載ガイド
+docs/stripe-payout-design.md Stripe入金設計
 ```
 
 ## WordPressへの掲載手順
