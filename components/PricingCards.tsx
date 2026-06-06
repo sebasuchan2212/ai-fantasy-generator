@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
 import { Check, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,19 +12,34 @@ import {
   OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST
 } from "@/lib/credits";
 import { addDemoCredits } from "@/lib/demo-store";
-import { getAccessToken } from "@/lib/supabase/client";
+import {
+  getAccessToken,
+  isBrowserSupabaseConfigured
+} from "@/lib/supabase/client";
 import { cn, formatCredits } from "@/lib/utils";
+
+function redirectToAuthForPurchase(planId: string) {
+  const next = `/auth?redirect=/pricing&plan=${encodeURIComponent(planId)}`;
+  toast.info("購入にはログインまたは新規登録が必要です。");
+  window.location.href = next;
+}
 
 export function PricingCards({
   onPurchased
 }: {
   onPurchased?: (credits: number) => void;
 }) {
+  const autoCheckoutStarted = useRef(false);
   const highQualityCost =
     BASE_GENERATION_CREDIT_COST + OPENAI_HIGH_QUALITY_IMAGE_CREDIT_COST;
 
-  const purchase = async (planId: string) => {
+  const purchase = useCallback(async (planId: string) => {
     const token = await getAccessToken();
+    if (!token && isBrowserSupabaseConfigured()) {
+      redirectToAuthForPurchase(planId);
+      return;
+    }
+
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: {
@@ -32,6 +48,11 @@ export function PricingCards({
       },
       body: JSON.stringify({ planId })
     });
+
+    if (response.status === 401 && isBrowserSupabaseConfigured()) {
+      redirectToAuthForPurchase(planId);
+      return;
+    }
 
     const data = (await response.json()) as {
       url?: string;
@@ -53,7 +74,26 @@ export function PricingCards({
     }
 
     toast.error(data.message ?? "購入処理を開始できませんでした。");
-  };
+  }, [onPurchased]);
+
+  useEffect(() => {
+    if (autoCheckoutStarted.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const planId = params.get("checkoutPlan");
+    const isValidPlan = PRICING_PLANS.some((plan) => plan.id === planId);
+    if (!planId || !isValidPlan) return;
+
+    autoCheckoutStarted.current = true;
+    params.delete("checkoutPlan");
+    const nextQuery = params.toString();
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`
+    );
+    void purchase(planId);
+  }, [purchase]);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -91,6 +131,9 @@ export function PricingCards({
               </li>
               <li className="flex items-center gap-2">
                 <Check className="text-primary" /> エクスポート無料
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="text-primary" /> クレカ・PayPay等はStripe側で表示
               </li>
               <li className="flex items-center gap-2">
                 <Check className="text-primary" /> Stripe未設定時はモック購入

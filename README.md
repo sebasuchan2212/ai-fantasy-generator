@@ -99,6 +99,10 @@ Stripe未設定時は、購入ボタンがモック購入としてlocalStorage�
 
 入金設計の詳細は `docs/stripe-payout-design.md` を参照してください。
 
+購入導線は、未ログイン状態でプランを押すと `/auth` へ移動し、ログインまたは新規登録後に同じプランのStripe Checkoutを再開します。支払い画面はStripe Checkoutの日本語UIで表示されます。
+
+支払い方法を増やす場合は、Stripe Dashboardの `Settings` → `Payment methods` で有効化します。クレジットカードは標準対応です。PayPayはStripeの日本向け決済手段として利用できますが、Stripe Dashboard側で有効化・審査が必要になる場合があります。楽天ペイはStripe Checkoutの標準決済手段としては扱えないため、どうしても必要な場合はKOMOJUやAdyenなど別決済プロバイダーの追加を検討します。
+
 ## Vercelデプロイ手順
 
 1. GitHubへリポジトリをpushします。

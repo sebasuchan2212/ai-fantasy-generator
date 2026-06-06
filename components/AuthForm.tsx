@@ -11,10 +11,28 @@ import { Label } from "@/components/ui/label";
 import { setDemoUser } from "@/lib/demo-store";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
+function postAuthPath() {
+  if (typeof window === "undefined") return "/dashboard";
+
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get("redirect");
+  const plan = params.get("plan");
+  const safeRedirect =
+    redirect?.startsWith("/") && !redirect.startsWith("//")
+      ? redirect
+      : "/dashboard";
+
+  if (safeRedirect === "/pricing" && plan) {
+    return `/pricing?checkoutPlan=${encodeURIComponent(plan)}`;
+  }
+
+  return safeRedirect;
+}
+
 export function AuthForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("demo@aifantasy.local");
+  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,17 +49,23 @@ export function AuthForm() {
       if (result.error) {
         toast.error(result.error.message);
         setIsLoading(false);
+          return;
+      }
+
+      if (mode === "signup" && !result.data.session) {
+        toast.success("登録しました。確認メールが届いた場合は、確認後にログインしてください。");
+        router.push("/auth");
         return;
       }
 
       toast.success(mode === "login" ? "ログインしました。" : "登録しました。");
-      router.push("/dashboard");
+      router.push(postAuthPath());
       return;
     }
 
     setDemoUser(email);
     toast.success("デモユーザーとして開始しました。");
-    router.push("/generator/npc");
+    router.push(postAuthPath());
   };
 
   return (
@@ -52,7 +76,7 @@ export function AuthForm() {
           <CardHeader>
             <CardTitle>{mode === "login" ? "ログイン" : "新規登録"}</CardTitle>
             <CardDescription>
-              Supabase未設定時はデモユーザーとしてそのまま利用できます。
+              購入したクレジットを保存するため、メールアドレスでアカウントを作成します。
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -88,8 +112,8 @@ export function AuthForm() {
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
             >
               {mode === "login"
-                ? "新規登録に切り替え"
-                : "ログインに切り替え"}
+                ? "はじめての方は新規登録"
+                : "登録済みの方はログイン"}
             </Button>
           </CardContent>
         </Card>
